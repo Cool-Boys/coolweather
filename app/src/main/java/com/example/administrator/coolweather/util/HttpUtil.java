@@ -1,8 +1,16 @@
 package com.example.administrator.coolweather.util;
 
+import android.util.Log;
+
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParserFactory;
+
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -11,7 +19,7 @@ import java.net.URL;
  */
 public class HttpUtil {
     public static void sendHttpRequest(final String address,
-                                      final HttpCallbackListener listener) {
+                                       final HttpCallbackListener listener) {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -30,9 +38,14 @@ public class HttpUtil {
                     while ((line = reader.readLine()) != null) {
                         response.append(line);
                     }
+                    String reStr = "";
+                    if (response != null) {
+                        reStr = parseXMLWithPull(response.toString());
+
+                    }
                     if (listener != null) {
 // 回调onFinish()方法
-                        listener.onFinish(response.toString());
+                        listener.onFinish(reStr);
                     }
                 } catch (Exception e) {
                     if (listener != null) {
@@ -48,4 +61,38 @@ public class HttpUtil {
         }).start();
     }
 
+
+    private static String parseXMLWithPull(String response) throws XmlPullParserException, IOException {
+        XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+        XmlPullParser xmlPullParser = factory.newPullParser();
+        xmlPullParser.setInput(new StringReader(response));
+        int eventType = xmlPullParser.getEventType();
+        String city = "";
+        while (eventType != XmlPullParser.END_DOCUMENT) {
+            String nodeName = xmlPullParser.getName();
+            switch (eventType) {
+// 开始解析某个结点
+                case XmlPullParser.START_TAG: {
+                    if ("city".equals(nodeName)) {
+                        city = xmlPullParser.nextText();
+                    }
+                    break;
+                }
+                case XmlPullParser.END_TAG: {
+                    if ("app".equals(nodeName)) {
+                        Log.d("httpUtil", "city is " + city);
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
+            eventType = xmlPullParser.next();
+        }
+
+        return city;
+    }
+
+
 }
+
