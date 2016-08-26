@@ -7,6 +7,7 @@ import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -31,18 +32,34 @@ public class HttpUtil {
                     connection.setConnectTimeout(8000);
                     connection.setReadTimeout(8000);
                     InputStream in = connection.getInputStream();
-                    BufferedReader reader = new BufferedReader(new
-                            InputStreamReader(in));
-                    StringBuilder response = new StringBuilder();
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        response.append(line);
-                    }
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    int len = 0;
+                    byte[] buffer = new byte[1024*1024];
+                    len = in.read(buffer);
+                    out.write(buffer, 0, len);
+                    String result = out.toString();
+                    in.close();
+                    out.close();
+//                    BufferedReader reader = new BufferedReader(new
+//                            InputStreamReader(in));
+//                    StringBuilder response = new StringBuilder();
+//                    String line;
+//                    while ((line = reader.readLine()) != null) {
+//                        response.append(line);
+//                    }
                     String reStr = "";
-                    if (response != null) {
-                        reStr = parseXMLWithPull(response.toString());
 
+                    if (address.indexOf("xml")>0) {
+                        if (result != null) {
+                            reStr = parseXMLWithPull(result.toString());
+
+                        }
                     }
+                    else
+                    {
+                        reStr= result.toString();
+                    }
+
                     if (listener != null) {
 // 回调onFinish()方法
                         listener.onFinish(reStr);
